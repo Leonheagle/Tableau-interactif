@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau interactif</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+
+        canvas {
+            background-color: white;
+            border: 2px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Tableau interactif</h1>
+    <p>Les formes envoyées par le client Python apparaîtront ici.</p>
+
+    <canvas id="canvas" width="800" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        // Connexion au serveur WebSocket
+        const socket = new WebSocket("ws://localhost:8765");
+
+        socket.onopen = function () {
+            console.log("Connexion WebSocket établie.");
+        };
+
+        socket.onclose = function () {
+            console.log("Connexion WebSocket fermée.");
+        };
+
+        socket.onerror = function (error) {
+            console.error("Erreur WebSocket :", error);
+        };
+
+        // Réception des formes envoyées par le serveur
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+
+            ctx.fillStyle = `rgb(${data.color.join(",")})`;
+            ctx.strokeStyle = `rgb(${data.color.join(",")})`;
+
+            if (data.shape === "point") {
+                ctx.fillRect(data.x, data.y, 3, 3);
+
+            } else if (data.shape === "line") {
+                ctx.beginPath();
+                ctx.moveTo(data.x1, data.y1);
+                ctx.lineTo(data.x2, data.y2);
+                ctx.stroke();
+
+            } else if (data.shape === "circle") {
+                ctx.beginPath();
+                ctx.arc(data.x, data.y, data.radius, 0, 2 * Math.PI);
+                ctx.fill();
+
+            } else if (data.shape === "rectangle") {
+                ctx.fillRect(data.x, data.y, data.width, data.height);
+
+            } else if (data.shape === "square") {
+                ctx.fillRect(data.x, data.y, data.cote, data.cote);
+            }
+        };
+    </script>
+</body>
+</html>
